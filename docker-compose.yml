@@ -61,6 +61,26 @@ services:
       - backend
     restart: unless-stopped
 
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    command:
+      - -nginx.scrape-uri=http://nginx_gateway/nginx_status
+    ports:
+      - "9113:9113"
+    networks:
+      - backend
+    depends_on:
+      - nginx
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - backend
+
 networks:
   frontend:
   backend:
