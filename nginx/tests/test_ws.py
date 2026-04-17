@@ -1,21 +1,28 @@
 # tests/test_ws.py
-import asyncio, json, websockets
+import asyncio
+import json
+
+import websockets
 
 async def test_websocket():
     uri = "ws://ws.localhost/ws"
     async with websockets.connect(uri) as ws:
-        # Получить welcome сообщение
+        # Получить welcome-сообщение от сервера.
         welcome = await ws.recv()
-        print(f"Welcome: {json.loads(welcome)}") 
+        welcome_data = json.loads(welcome)
+        print(f"Welcome: {welcome_data}")
+        assert welcome_data["type"] == "welcome"
 
-        # Отправить сообщение
-        await ws.send('Hello, NGINX!')
+        # ws-server эхо-ответом возвращает исходную строку, а не JSON.
+        message = "Hello, NGINX!"
+        await ws.send(message)
 
-        # Получить echo
+        # Проверяем, что через nginx проксируется обычное echo-сообщение.
         echo = await ws.recv()
-        data = json.loads(echo)
-        print(f"Echo received: {data['original']} at {data['timestamp']}")
-        assert data['type'] == 'echo'
-        print('✅ WebSocket proxy works correctly!')
+        if isinstance(echo, bytes):
+            echo = echo.decode()
+        print(f"Echo received: {echo}")
+        assert echo == message
+        print("✅ WebSocket proxy works correctly!")
 
 asyncio.run(test_websocket())
